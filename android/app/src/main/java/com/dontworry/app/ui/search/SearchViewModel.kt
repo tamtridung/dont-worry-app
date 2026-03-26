@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.dontworry.app.data.repo.ThreadRepository
 import com.dontworry.app.data.repo.SynonymsRepository
+import com.dontworry.app.domain.model.Thread
+import com.dontworry.app.domain.search.ExcerptBuilder
 import com.dontworry.app.domain.search.SearchService
 import com.dontworry.app.domain.thread.ThreadIdentity
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +25,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
+    private var allThreads: List<Thread> = emptyList()
     private var searchService: SearchService? = null
 
     init {
@@ -62,18 +65,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
         viewModelScope.launch(Dispatchers.Default) {
             val results = service.search(query, limit = MAX_RESULTS).map {
-                SearchListItem(
-                    identity = ThreadIdentity.fromParts(
-                        threadId = it.thread.threadId,
-                        threadLink = it.thread.threadLink,
-                        threadTitle = it.thread.threadTitle
-                    ),
-                    title = it.thread.threadTitle,
-                    excerpt = it.excerpt,
-                    threadLink = it.thread.threadLink,
-                    threadContent = it.thread.threadContent,
-                    responses = it.thread.responses
-                )
+                toSearchListItem(it.thread, it.excerpt)
             }
 
             _uiState.value = _uiState.value.copy(
@@ -85,14 +77,34 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun refreshSuggestedThreads() {
+        if (allThreads.isEmpty()) return
+
+        _uiState.value = _uiState.value.copy(isRefreshingSuggestions = true)
+        viewModelScope.launch(Dispatchers.Default) {
+            val suggested = allThreads.shuffled().take(10).map { thread ->
+                toSearchListItem(thread)
+            }
+            _uiState.value = _uiState.value.copy(
+                suggestedThreads = suggested,
+                isRefreshingSuggestions = false
+            )
+        }
+    }
+
     private fun loadData() {
         _uiState.value = _uiState.value.copy(isLoading = true)
         viewModelScope.launch(Dispatchers.Default) {
             val threads = ThreadRepository(getApplication()).loadThreads()
+            allThreads = threads
             val synonymsResult = SynonymsRepository(getApplication()).load()
             searchService = SearchService(threads, synonymsResult.groups)
+            val suggested = threads.shuffled().take(10).map { thread ->
+                toSearchListItem(thread)
+            }
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
+                suggestedThreads = suggested,
                 promptMessage = if (synonymsResult.enabled) {
                     "Tra cứu các kiến thức thực tế về các bệnh STDs.\n>> Dữ liệu được cập nhật liên tục từ: diendanhiv.vn\n>> Anh *Tuanmecsedec* là admin của diễn đàn với hơn 18 năm kinh nghiệm tư vấn có chứng chỉ chuyên môn."
                 } else {
@@ -100,6 +112,21 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                 }
             )
         }
+    }
+
+    private fun toSearchListItem(thread: Thread, excerpt: String? = null): SearchListItem {
+        return SearchListItem(
+            identity = ThreadIdentity.fromParts(
+                threadId = thread.threadId,
+                threadLink = thread.threadLink,
+                threadTitle = thread.threadTitle
+            ),
+            title = thread.threadTitle,
+            excerpt = excerpt ?: ExcerptBuilder.fromText(thread.threadContent),
+            threadLink = thread.threadLink,
+            threadContent = thread.threadContent,
+            responses = thread.responses
+        )
     }
 }
 

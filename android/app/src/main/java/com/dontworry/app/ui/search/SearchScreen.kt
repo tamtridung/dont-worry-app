@@ -1,6 +1,7 @@
 package com.dontworry.app.ui.search
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,6 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +32,10 @@ fun SearchScreen(
     onOpenThread: (threadIdentity: String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = uiState.isRefreshingSuggestions,
+        onRefresh = viewModel::refreshSuggestedThreads
+    )
 
     Column(
         modifier = Modifier
@@ -124,12 +132,45 @@ fun SearchScreen(
             }
         }
 
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(uiState.currentPageResults, key = { it.identity }) { item ->
-                SearchResultRow(item = item) { selected ->
-                    onOpenThread(selected.identity)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pullRefresh(pullRefreshState)
+        ) {
+            if (uiState.results.isEmpty() && uiState.suggestedThreads.isNotEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Gợi ý ngẫu nhiên (kéo xuống để làm mới)",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(uiState.suggestedThreads, key = { it.identity }) { item ->
+                            SearchResultRow(item = item) { selected ->
+                                onOpenThread(selected.identity)
+                            }
+                        }
+                    }
+                }
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(uiState.currentPageResults, key = { it.identity }) { item ->
+                        SearchResultRow(item = item) { selected ->
+                            onOpenThread(selected.identity)
+                        }
+                    }
                 }
             }
+
+            PullRefreshIndicator(
+                refreshing = uiState.isRefreshingSuggestions,
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
         }
     }
 }

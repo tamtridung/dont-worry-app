@@ -14,7 +14,9 @@ data class SearchListItem(
 data class SearchUiState(
     val query: String = "",
     val isLoading: Boolean = false,
+    val isRefreshingSuggestions: Boolean = false,
     val promptMessage: String? = null,
+    val suggestedThreads: List<SearchListItem> = emptyList(),
     val results: List<SearchListItem> = emptyList(),
     val currentPage: Int = 1,
     val pageSize: Int = 10

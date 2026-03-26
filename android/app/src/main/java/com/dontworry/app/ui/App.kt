@@ -52,7 +52,8 @@ fun App() {
                 )
                 val detailState by detailViewModel.uiState.collectAsStateWithLifecycle()
                 val threadId = Uri.decode(it.arguments?.getString("threadId").orEmpty())
-                val matched = searchState.results.firstOrNull { item -> item.identity == threadId }
+                val matched = (searchState.results + searchState.suggestedThreads)
+                    .firstOrNull { item -> item.identity == threadId }
 
                 LaunchedEffect(threadId, matched) {
                     detailViewModel.loadFromSearchItem(matched)
