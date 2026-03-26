@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,8 +76,56 @@ fun SearchScreen(
             )
         }
 
+        if (uiState.results.isNotEmpty()) {
+            Text(
+                text = "Showing ${uiState.results.size} results • Page ${uiState.currentPage}/${uiState.totalPages}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
+
+        if (uiState.totalPages > 1) {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    OutlinedButton(
+                        onClick = { viewModel.onPageSelected(uiState.currentPage - 1) },
+                        enabled = uiState.currentPage > 1
+                    ) {
+                        Text("Prev")
+                    }
+                }
+
+                items((1..uiState.totalPages).toList()) { page ->
+                    if (page == uiState.currentPage) {
+                        Button(onClick = {}, enabled = false) {
+                            Text(page.toString())
+                        }
+                    } else {
+                        OutlinedButton(onClick = { viewModel.onPageSelected(page) }) {
+                            Text(page.toString())
+                        }
+                    }
+                }
+
+                item {
+                    OutlinedButton(
+                        onClick = { viewModel.onPageSelected(uiState.currentPage + 1) },
+                        enabled = uiState.currentPage < uiState.totalPages
+                    ) {
+                        Text("Next")
+                    }
+                }
+            }
+        }
+
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(uiState.results, key = { it.identity }) { item ->
+            items(uiState.currentPageResults, key = { it.identity }) { item ->
                 SearchResultRow(item = item) { selected ->
                     onOpenThread(selected.identity)
                 }

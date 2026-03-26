@@ -16,6 +16,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
+    companion object {
+        private const val MAX_RESULTS = 100
+    }
+
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
@@ -26,7 +30,20 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun onQueryChanged(newValue: String) {
-        _uiState.value = _uiState.value.copy(query = newValue, promptMessage = null)
+        _uiState.value = _uiState.value.copy(
+            query = newValue,
+            promptMessage = null,
+            currentPage = 1
+        )
+    }
+
+    fun onPageSelected(page: Int) {
+        val state = _uiState.value
+        if (state.totalPages == 0) return
+        val safePage = page.coerceIn(1, state.totalPages)
+        if (safePage != state.currentPage) {
+            _uiState.value = state.copy(currentPage = safePage)
+        }
     }
 
     fun submitSearch() {
@@ -41,8 +58,10 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
 
+        _uiState.value = _uiState.value.copy(isLoading = true)
+
         viewModelScope.launch(Dispatchers.Default) {
-            val results = service.search(query).map {
+            val results = service.search(query, limit = MAX_RESULTS).map {
                 SearchListItem(
                     identity = ThreadIdentity.fromParts(
                         threadId = it.thread.threadId,
@@ -60,7 +79,8 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 promptMessage = if (results.isEmpty()) "No results found." else null,
-                results = results
+                results = results,
+                currentPage = 1
             )
         }
     }

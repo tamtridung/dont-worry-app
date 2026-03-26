@@ -26,7 +26,8 @@ import com.dontworry.app.ui.search.SearchViewModelFactory
 fun App() {
     MaterialTheme {
         val navController = rememberNavController()
-        val application = LocalContext.current.applicationContext as Application
+        val context = LocalContext.current
+        val application = context.applicationContext as Application
         val searchViewModel: SearchViewModel = viewModel(
             factory = SearchViewModelFactory(application)
         )
@@ -60,7 +61,7 @@ fun App() {
                 ThreadDetailScreen(
                     uiState = detailState,
                     onBack = { navController.popBackStack() },
-                    onOpenLink = { link -> openThreadLink(application, link) }
+                    onOpenLink = { link -> openThreadLink(context, link) }
                 )
             }
         }

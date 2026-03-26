@@ -1,5 +1,6 @@
 package com.dontworry.app.ui.detail
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -60,12 +61,19 @@ fun ThreadDetailScreen(
         Text(text = uiState.content, style = MaterialTheme.typography.bodyMedium)
 
         if (uiState.canOpenLink) {
-            Button(onClick = { onOpenLink(uiState.threadLink.orEmpty()) }) {
-                Text("Open original thread")
-            }
+
+            Text(
+                text = uiState.threadLink.orEmpty(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable {
+                    onOpenLink(uiState.threadLink.orEmpty())
+                }
+            )
+
         }
 
-        Text(text = "Responses", style = MaterialTheme.typography.titleMedium)
+        Text(text = "Nội dung trò chuyện:", style = MaterialTheme.typography.titleMedium)
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
@@ -84,7 +92,7 @@ fun ThreadDetailScreen(
         }
 
         Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-            Text("Back")
+            Text("Quay lại")
         }
     }
 }
