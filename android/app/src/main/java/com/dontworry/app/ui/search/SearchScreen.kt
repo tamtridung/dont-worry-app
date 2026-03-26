@@ -46,11 +46,11 @@ fun SearchScreen(
                 value = uiState.query,
                 onValueChange = viewModel::onQueryChanged,
                 modifier = Modifier.weight(1f),
-                label = { Text("Ask a keyword") },
+                label = { Text("Nhập từ khoá:") },
                 singleLine = true
             )
             Button(onClick = viewModel::submitSearch) {
-                Text("Search")
+                Text("Tìm bài viết!")
             }
         }
 
@@ -97,7 +97,7 @@ fun SearchScreen(
                         onClick = { viewModel.onPageSelected(uiState.currentPage - 1) },
                         enabled = uiState.currentPage > 1
                     ) {
-                        Text("Prev")
+                        Text("<<")
                     }
                 }
 
@@ -118,7 +118,7 @@ fun SearchScreen(
                         onClick = { viewModel.onPageSelected(uiState.currentPage + 1) },
                         enabled = uiState.currentPage < uiState.totalPages
                     ) {
-                        Text("Next")
+                        Text(">>")
                     }
                 }
             }

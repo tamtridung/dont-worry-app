@@ -49,7 +49,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     fun submitSearch() {
         val query = _uiState.value.query.trim()
         if (query.isBlank()) {
-            _uiState.value = _uiState.value.copy(promptMessage = "Please enter a keyword.")
+            _uiState.value = _uiState.value.copy(promptMessage = "Hãy nhập từ khoá để tìm bài viết.")
             return
         }
 
@@ -94,9 +94,9 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 promptMessage = if (synonymsResult.enabled) {
-                    "Type a keyword to search."
+                    "Tra cứu các kiến thức thực tế về các bệnh STDs.\n>> Dữ liệu được cập nhật liên tục từ: diendanhiv.vn\n>> Anh *Tuanmecsedec* là admin của diễn đàn với hơn 18 năm kinh nghiệm tư vấn có chứng chỉ chuyên môn."
                 } else {
-                    "Type a keyword to search. (Synonyms disabled)"
+                    "Tra cứu các kiến thức thực tế về các bệnh STDs.\nDữ liệu được cập nhật liên tục từ: diendanhiv.vn\nAnh *Tuanmecsedec* là admin của diễn đàn với hơn 18 năm kinh nghiệm tư vấn có chứng chỉ chuyên môn."
                 }
             )
         }
