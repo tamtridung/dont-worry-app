@@ -60,7 +60,7 @@ fun ThreadDetailScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        val questionMaxHeight = maxHeight * 0.3f
+        val questionMaxHeight = maxHeight * 0.26f
 
         Column(
             modifier = Modifier.fillMaxSize(),

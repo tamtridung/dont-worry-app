@@ -1,7 +1,7 @@
 package com.dontworry.app.ui.detail
 
 import android.app.Application
-import android.util.Patterns
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -23,8 +23,8 @@ class ThreadDetailViewModel(application: Application) : AndroidViewModel(applica
             return
         }
 
-        val link = item.threadLink?.trim()?.ifEmpty { null }
-        val canOpen = link != null && Patterns.WEB_URL.matcher(link).matches()
+        val link = normalizeThreadLink(item.threadLink)
+        val canOpen = link != null
         _uiState.value = ThreadDetailUiState(
             isLoading = false,
             title = item.title,
@@ -34,6 +34,26 @@ class ThreadDetailViewModel(application: Application) : AndroidViewModel(applica
             canOpenLink = canOpen,
             notFoundMessage = null
         )
+    }
+
+    private fun normalizeThreadLink(rawLink: String?): String? {
+        val trimmed = rawLink?.trim()?.ifEmpty { null } ?: return null
+        val linkWithScheme = if (
+            trimmed.startsWith("http://", ignoreCase = true) ||
+            trimmed.startsWith("https://", ignoreCase = true)
+        ) {
+            trimmed
+        } else {
+            "https://$trimmed"
+        }
+
+        val uri = Uri.parse(linkWithScheme)
+        val hasValidScheme = uri.scheme.equals("http", ignoreCase = true) ||
+            uri.scheme.equals("https", ignoreCase = true)
+        if (!hasValidScheme || uri.host.isNullOrBlank()) {
+            return null
+        }
+        return uri.toString()
     }
 }
 
