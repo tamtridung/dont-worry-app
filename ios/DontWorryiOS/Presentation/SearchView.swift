@@ -7,7 +7,7 @@ struct SearchView: View {
         NavigationStack {
             VStack(spacing: 12) {
                 HStack(spacing: 8) {
-                    TextField("Nhap tu khoa", text: Binding(
+                    TextField("Nhập từ khoá", text: Binding(
                         get: { viewModel.query },
                         set: { viewModel.onQueryChanged($0) }
                     ))
@@ -15,7 +15,7 @@ struct SearchView: View {
                     .submitLabel(.search)
                     .onSubmit { viewModel.submitSearch() }
 
-                    Button("Tim") {
+                    Button("Tìm bài viết!") {
                         viewModel.submitSearch()
                     }
                     .buttonStyle(.borderedProminent)
@@ -38,7 +38,7 @@ struct SearchView: View {
 
                 if !viewModel.currentPageResults.isEmpty {
                     List {
-                        Section("Ket qua") {
+                        Section("Kết quả:") {
                             ForEach(viewModel.currentPageResults) { item in
                                 NavigationLink(value: item.id) {
                                     VStack(alignment: .leading, spacing: 4) {
@@ -53,36 +53,39 @@ struct SearchView: View {
                                 }
                             }
                         }
-
-                        if viewModel.totalPages > 1 {
-                            Section("Trang") {
-                                HStack {
-                                    Button("Truoc") {
-                                        viewModel.onPageSelected(viewModel.currentPage - 1)
-                                    }
-                                    .disabled(viewModel.currentPage <= 1)
-
-                                    Spacer()
-                                    Text("\(viewModel.currentPage)/\(viewModel.totalPages)")
-                                    Spacer()
-
-                                    Button("Sau") {
-                                        viewModel.onPageSelected(viewModel.currentPage + 1)
-                                    }
-                                    .disabled(viewModel.currentPage >= viewModel.totalPages)
-                                }
-                            }
-                        }
                     }
                     .listStyle(.insetGrouped)
+
+                    if viewModel.totalPages > 1 {
+                        HStack(spacing: 12) {
+                            Button("<<") {
+                                viewModel.onPageSelected(viewModel.currentPage - 1)
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(viewModel.currentPage <= 1)
+
+                            Spacer()
+                            Text("\(viewModel.currentPage)/\(viewModel.totalPages)")
+                                .font(.callout.weight(.semibold))
+                            Spacer()
+
+                            Button(">>") {
+                                viewModel.onPageSelected(viewModel.currentPage + 1)
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(viewModel.currentPage >= viewModel.totalPages)
+                        }
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
+                    }
                 } else {
                     List {
                         Section {
                             HStack {
-                                Text("Goi y chu de")
+                                Text("Gợi ý bài viết:")
                                     .font(.headline)
                                 Spacer()
-                                Button("Lam moi") {
+                                Button("Làm mới") {
                                     viewModel.refreshSuggestedThreads()
                                 }
                                 .disabled(viewModel.isRefreshingSuggestions)
@@ -106,7 +109,7 @@ struct SearchView: View {
                     .listStyle(.insetGrouped)
                 }
             }
-            .navigationTitle("Dont Worry")
+            .navigationTitle("Đừng lo, hỏi đi!")
             .navigationDestination(for: String.self) { itemId in
                 ThreadDetailContainerView(itemId: itemId, searchViewModel: viewModel)
             }

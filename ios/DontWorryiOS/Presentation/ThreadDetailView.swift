@@ -25,7 +25,7 @@ struct ThreadDetailView: View {
                             .font(.body)
 
                         if !viewModel.responses.isEmpty {
-                            Text("Responses")
+                            Text("Phản hồi:")
                                 .font(.headline)
 
                             ForEach(Array(viewModel.responses.enumerated()), id: \.offset) { _, response in
@@ -43,7 +43,7 @@ struct ThreadDetailView: View {
 
                         if viewModel.canOpenLink, let threadLink = viewModel.threadLink, let url = URL(string: threadLink) {
                             Link(destination: url) {
-                                Label("Mo bai goc bang Safari", systemImage: "safari")
+                                Label("Mở link bài viết", systemImage: "safari")
                                     .font(.callout.weight(.semibold))
                             }
                             .padding(.top, 8)
@@ -53,7 +53,7 @@ struct ThreadDetailView: View {
                 }
             }
         }
-        .navigationTitle("Chi tiet")
+        .navigationTitle("Chi tiết bài viết")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

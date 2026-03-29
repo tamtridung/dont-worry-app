@@ -16,6 +16,7 @@ final class SearchViewModel: ObservableObject {
 
     private var allThreads: [Thread] = []
     private var searchService: SearchService?
+    private var hasLoadedInitialData = false
 
     var totalPages: Int {
         if results.isEmpty { return 0 }
@@ -31,7 +32,8 @@ final class SearchViewModel: ObservableObject {
     }
 
     func loadData() {
-        if isLoading { return }
+        if isLoading || hasLoadedInitialData { return }
+        hasLoadedInitialData = true
         isLoading = true
 
         Task.detached(priority: .userInitiated) {
@@ -46,17 +48,19 @@ final class SearchViewModel: ObservableObject {
                 self.suggestedThreads = Array(suggested)
                 self.isLoading = false
                 if threads.isEmpty {
+                    self.hasLoadedInitialData = false
                     self.promptMessage = "Khong tai duoc du lieu tim kiem. Vui long thu dong app va mo lai."
                 } else {
                     self.promptMessage = synonyms.enabled
-                        ? "Tra cuu cac kien thuc thuc te ve cac benh STDs.\nDu lieu duoc cap nhat lien tuc tu: diendanhiv.vn\nAnh Tuanmecsedec la admin cua dien dan voi hon 18 nam kinh nghiem tu van co chung chi chuyen mon."
-                        : "Tra cuu cac kien thuc thuc te ve cac benh STDs.\nDu lieu duoc cap nhat lien tuc tu: diendanhiv.vn"
+                        ? "Tra cứu các kiến thức thực tế về các bệnh STDs.\nDữ liệu được cập nhật liên tục từ: diendanhiv.vn\nAnh Tuanmecsedec là admin của diễn đàn với hơn 18 năm kinh nghiệm tư vấn có chứng chỉ chuyên môn."
+                        : "Tra cứu các kiến thức thực tế về các bệnh STDs.\nDữ liệu được cập nhật liên tục từ: diendanhiv.vn"
                 }
             }
         }
     }
 
     func onQueryChanged(_ newValue: String) {
+        guard newValue != query else { return }
         query = newValue
         promptMessage = nil
         currentPage = 1
@@ -65,7 +69,7 @@ final class SearchViewModel: ObservableObject {
     func submitSearch() {
         let normalized = query.trimmingCharacters(in: .whitespacesAndNewlines)
         if normalized.isEmpty {
-            promptMessage = "Hay nhap tu khoa de tim bai viet."
+            promptMessage = "Hãy nhập từ khóa để tìm kiếm."
             return
         }
 
