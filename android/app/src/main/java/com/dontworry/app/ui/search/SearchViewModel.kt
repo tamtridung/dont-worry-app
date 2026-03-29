@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.dontworry.app.data.repo.ThreadRepository
 import com.dontworry.app.data.repo.SynonymsRepository
+import com.dontworry.app.domain.model.Thread
+import com.dontworry.app.domain.search.ExcerptBuilder
 import com.dontworry.app.domain.search.SearchService
 import com.dontworry.app.domain.thread.ThreadIdentity
 import kotlinx.coroutines.Dispatchers
@@ -16,9 +18,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
+    companion object {
+        private const val MAX_RESULTS = 100
+    }
+
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
+    private var allThreads: List<Thread> = emptyList()
     private var searchService: SearchService? = null
 
     init {
@@ -26,13 +33,26 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun onQueryChanged(newValue: String) {
-        _uiState.value = _uiState.value.copy(query = newValue, promptMessage = null)
+        _uiState.value = _uiState.value.copy(
+            query = newValue,
+            promptMessage = null,
+            currentPage = 1
+        )
+    }
+
+    fun onPageSelected(page: Int) {
+        val state = _uiState.value
+        if (state.totalPages == 0) return
+        val safePage = page.coerceIn(1, state.totalPages)
+        if (safePage != state.currentPage) {
+            _uiState.value = state.copy(currentPage = safePage)
+        }
     }
 
     fun submitSearch() {
         val query = _uiState.value.query.trim()
         if (query.isBlank()) {
-            _uiState.value = _uiState.value.copy(promptMessage = "Please enter a keyword.")
+            _uiState.value = _uiState.value.copy(promptMessage = "Hãy nhập từ khoá để tìm bài viết.")
             return
         }
 
@@ -41,26 +61,33 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
 
+        _uiState.value = _uiState.value.copy(isLoading = true)
+
         viewModelScope.launch(Dispatchers.Default) {
-            val results = service.search(query).map {
-                SearchListItem(
-                    identity = ThreadIdentity.fromParts(
-                        threadId = it.thread.threadId,
-                        threadLink = it.thread.threadLink,
-                        threadTitle = it.thread.threadTitle
-                    ),
-                    title = it.thread.threadTitle,
-                    excerpt = it.excerpt,
-                    threadLink = it.thread.threadLink,
-                    threadContent = it.thread.threadContent,
-                    responses = it.thread.responses
-                )
+            val results = service.search(query, limit = MAX_RESULTS).map {
+                toSearchListItem(it.thread, it.excerpt)
             }
 
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 promptMessage = if (results.isEmpty()) "No results found." else null,
-                results = results
+                results = results,
+                currentPage = 1
+            )
+        }
+    }
+
+    fun refreshSuggestedThreads() {
+        if (allThreads.isEmpty()) return
+
+        _uiState.value = _uiState.value.copy(isRefreshingSuggestions = true)
+        viewModelScope.launch(Dispatchers.Default) {
+            val suggested = allThreads.shuffled().take(10).map { thread ->
+                toSearchListItem(thread)
+            }
+            _uiState.value = _uiState.value.copy(
+                suggestedThreads = suggested,
+                isRefreshingSuggestions = false
             )
         }
     }
@@ -69,17 +96,37 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         _uiState.value = _uiState.value.copy(isLoading = true)
         viewModelScope.launch(Dispatchers.Default) {
             val threads = ThreadRepository(getApplication()).loadThreads()
+            allThreads = threads
             val synonymsResult = SynonymsRepository(getApplication()).load()
             searchService = SearchService(threads, synonymsResult.groups)
+            val suggested = threads.shuffled().take(10).map { thread ->
+                toSearchListItem(thread)
+            }
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
+                suggestedThreads = suggested,
                 promptMessage = if (synonymsResult.enabled) {
-                    "Type a keyword to search."
+                    "Tra cứu các kiến thức thực tế về các bệnh STDs.\n>> Dữ liệu được cập nhật liên tục từ: diendanhiv.vn\n>> Anh *Tuanmecsedec* là admin của diễn đàn với hơn 18 năm kinh nghiệm tư vấn có chứng chỉ chuyên môn."
                 } else {
-                    "Type a keyword to search. (Synonyms disabled)"
+                    "Tra cứu các kiến thức thực tế về các bệnh STDs.\nDữ liệu được cập nhật liên tục từ: diendanhiv.vn\nAnh *Tuanmecsedec* là admin của diễn đàn với hơn 18 năm kinh nghiệm tư vấn có chứng chỉ chuyên môn."
                 }
             )
         }
+    }
+
+    private fun toSearchListItem(thread: Thread, excerpt: String? = null): SearchListItem {
+        return SearchListItem(
+            identity = ThreadIdentity.fromParts(
+                threadId = thread.threadId,
+                threadLink = thread.threadLink,
+                threadTitle = thread.threadTitle
+            ),
+            title = thread.threadTitle,
+            excerpt = excerpt ?: ExcerptBuilder.fromText(thread.threadContent),
+            threadLink = thread.threadLink,
+            threadContent = thread.threadContent,
+            responses = thread.responses
+        )
     }
 }
 
