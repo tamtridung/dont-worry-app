@@ -1,0 +1,31 @@
+# macOS / Editor
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+*.egg-info/
+
+# Android / Kotlin / Gradle
+.gradle/
+build/
+**/build/
+out/
+*.iml
+*.log
+*.class
+local.properties
+captures/
+
+# IDE
+.idea/
+.vscode/
+
+# Environment
+.env*
