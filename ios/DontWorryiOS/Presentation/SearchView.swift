@@ -113,10 +113,31 @@ struct SearchView: View {
             .navigationDestination(for: String.self) { itemId in
                 ThreadDetailContainerView(itemId: itemId, searchViewModel: viewModel)
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                DonateFooterView()
+            }
             .onAppear {
                 viewModel.loadData()
             }
         }
+    }
+}
+
+private struct DonateFooterView: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            Divider()
+
+            Text("Tặng mình 1 ly trà đá! MoMo: 0849960203")
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 16)
+                .padding(.top, 9)
+                .padding(.bottom, 1)
+        }
+        .background(.thinMaterial)
     }
 }
 
